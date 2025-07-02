@@ -14,7 +14,7 @@ const projects = [
     title: "Metronome",
     description: "A metronome this isn't complete yet...",
     link: "/metronome",
-    isInternal: false,
+    isInternal: true,
   },
   {
     id: 3,
