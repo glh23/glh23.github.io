@@ -12,7 +12,7 @@ const projects = [
   {
     id: 2,
     title: "Metronome",
-    description: "A metronome ",
+    description: "A metronome this isn't complete yet...",
     link: "/metronome",
     isInternal: false,
   },

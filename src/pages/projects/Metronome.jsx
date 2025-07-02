@@ -16,7 +16,7 @@ export default function Metronome() {
     oscillator.connect(gainNode);
     gainNode.connect(context.destination);
 
-    oscillator.frequency.value = 1000; // 1kHz beep
+    oscillator.frequency.value = 3000; // 1kHz beep
     gainNode.gain.value = 1;
 
     oscillator.start();
@@ -41,7 +41,7 @@ export default function Metronome() {
     setIsPlaying(!isPlaying);
   };
     return (
-    <div data-theme="dark" className="min-h-screen flex items-center justify-center bg-base-100 text-base-content p-6">
+    <div className="min-h-screen flex items-center justify-center bg-base-100 text-base-content p-6">
         <div className="bg-neutral p-8 rounded-lg shadow-lg text-center space-y-6 w-full max-w-md">
         <h1 className="text-3xl font-bold text-primary">Metronome</h1>
 
