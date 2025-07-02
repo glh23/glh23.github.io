@@ -6,7 +6,7 @@ import Home from "./pages/Home";
 import Contact from "./pages/Contact";
 import Projects from "./pages/projects/Projects";
 import GuitarTuner from './pages/projects/Tuner';
-import Metronome from './pages/projects/metronome';
+import Metronome from './pages/projects/Metronome';
 import RiskWeightPage from "./pages/projects/RiskWeight";
 
 export default function App() {
