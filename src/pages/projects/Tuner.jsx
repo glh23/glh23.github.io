@@ -1,281 +1,312 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const GuitarTuner = () => {
+// Generate chromatic notes and their frequencies
+const generateNoteFrequencies = () => {
+  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const frequencies = {};
+  for (let octave = 1; octave <= 6; octave++) {
+    for (let i = 0; i < notes.length; i++) {
+      const noteName = notes[i] + octave;
+      const midi = 12 * (octave + 1) + i;
+      const freq = 440 * Math.pow(2, (midi - 69) / 12);
+      frequencies[noteName] = freq;
+    }
+  }
+  return frequencies;
+};
+
+const noteFrequencies = generateNoteFrequencies();
+
+const getClosestNote = (freq) => {
+  let closest = null;
+  let minDiff = Infinity;
+  for (let note in noteFrequencies) {
+    const diff = Math.abs(noteFrequencies[note] - freq);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = note;
+    }
+  }
+  return closest;
+};
+
+const getTargetFrequency = (note) => noteFrequencies[note] ?? 0;
+
+const autoCorrelate = (buf, sampleRate) => {
+  // Check if the buffer is empty or too small
+  const SIZE = buf.length;
+  let rms = 0;
+
+  // Calculate the root mean square (RMS) of the buffer
+  for (let i = 0; i < SIZE; i++) {
+    rms += buf[i] * buf[i];
+  }
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.01) return null;
+
+  // Normalize the buffer
+  let r1 = 0, r2 = SIZE - 1, threshold = 0.2;
+  // Find the start and end of the signal
+  for (let i = 0; i < SIZE / 2; i++) {
+    if (Math.abs(buf[i]) < threshold) {
+      r1 = i;
+      break;
+    }
+  }
+  // Find the end of the signal
+  for (let i = 1; i < SIZE / 2; i++) {
+    if (Math.abs(buf[SIZE - i]) < threshold) {
+      r2 = SIZE - i;
+      break;
+    }
+  }
+
+  // If the signal is too short, return null
+  buf = buf.slice(r1, r2);
+  const newSize = buf.length;
+
+  // If the buffer is too small, return null
+  let c = new Array(newSize).fill(0);
+  for (let i = 0; i < newSize; i++) {
+    for (let j = 0; j < newSize - i; j++) {
+      c[i] += buf[j] * buf[j + i];
+    }
+  }
+
+
+  // Find the first peak in the autocorrelation
+  let d = 0;
+  while (c[d] > c[d + 1]) d++;
+
+  // If no peak found, return null
+  let maxval = -1, maxpos = -1;
+  for (let i = d; i < newSize; i++) {
+    if (c[i] > maxval) {
+      maxval = c[i];
+      maxpos = i;
+    }
+  }
+
+  return maxpos > 0 ? sampleRate / maxpos : null;
+};
+
+const NoteTuner = () => {
+  // Use state
   const [note, setNote] = useState(null);
   const [frequency, setFrequency] = useState(null);
   const [isTuning, setIsTuning] = useState(false);
+  const [tuningStatus, setTuningStatus] = useState(null);
   const canvasRef = useRef(null);
-  // Stores requestAnimationFrame ID
-  const animationId = useRef(null); 
-
-  window.AudioContext = window.AudioContext || window.webkitAudioContext;
+  const animationId = useRef(null);
+  const lastDrawTime = useRef(0);
 
   useEffect(() => {
-    let audioContext,
-      dataArray,
-      analyser,
-      source,
-      bufferLength,
-      stream;
+    let audioContext, analyser, source, dataArray, stream;
 
     const startTuning = async () => {
-      setIsTuning(true);
-      // Chuck out the audio context and stream
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioContext = new AudioContext();
-      analyser = audioContext.createAnalyser();
-      bufferLength = analyser.frequencyBinCount;
-      dataArray = new Float32Array(bufferLength);
+      try {
+        // Request microphone access
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Create audio context and analyser
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        // Configure the analyser
+        analyser.fftSize = 1024;
+        dataArray = new Float32Array(analyser.fftSize);
 
-      source = audioContext.createMediaStreamSource(stream);
-      source.connect(analyser);
+        // Create a media stream source from the microphone input
+        source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
 
-      processAudio();
+        // Set up the canvas for drawing
+        const draw = (timestamp) => {
+          if (!canvasRef.current) {
+            animationId.current = requestAnimationFrame(draw);
+            return;
+          }
+
+          // Clear the canvas
+          analyser.getFloatTimeDomainData(dataArray);
+          const freq = autoCorrelate(dataArray, audioContext.sampleRate);
+
+          // If a frequency is detected, update the state
+          if (freq) {
+            const detectedNote = getClosestNote(freq);
+            const roundedFreq = freq.toFixed(2);
+
+            // Update the note and frequency state
+            setNote(detectedNote);
+            setFrequency(roundedFreq);
+
+            // Update the tuning status based on the detected note
+            const target = getTargetFrequency(detectedNote);
+            const diff = freq - target;
+
+            // Set tuning status based on the difference
+            if (Math.abs(diff) < 1) {
+              setTuningStatus("In Tune");
+            } else if (diff > 0) {
+              setTuningStatus("Too High");
+            } else {
+              setTuningStatus("Too Low");
+            }
+
+            // Draw the waveform and tuning pin
+            if (timestamp - lastDrawTime.current > 1000 / 30) {
+              drawWaveform(dataArray);
+              drawTuningPin(freq, detectedNote);
+              lastDrawTime.current = timestamp;
+            }
+          }
+
+          animationId.current = requestAnimationFrame(draw);
+        };
+
+        draw();
+      } catch (err) {
+        console.error("Microphone access error:", err);
+        setIsTuning(false);
+      }
     };
 
     // Function to stop tuning and clean up resources
     const stopTuning = () => {
       setIsTuning(false);
+      if (animationId.current) cancelAnimationFrame(animationId.current);
+      if (stream) stream.getTracks().forEach((t) => t.stop());
       if (audioContext) audioContext.close();
-      if (stream) stream.getTracks().forEach((track) => track.stop());
-      if (animationId.current) {
-        cancelAnimationFrame(animationId.current);
-        animationId.current = null;
-      }
     };
 
-    let lastDrawTime = 0;
-
-    const processAudio = () => {
-      if (!isTuning) return;
-
-      const now = performance.now();
-      // Throttle the drawing to around 30 FPS
-      if (now - lastDrawTime < 33) {
-        animationId.current = requestAnimationFrame(processAudio);
-        return;
-      }
-      lastDrawTime = now;
-
-      analyser.getFloatTimeDomainData(dataArray);
-      const freq = autoCorrelate(dataArray, audioContext.sampleRate);
-
-      // If a frequency is detected, update the note and frequency state
-      if (freq) {
-        const detectedNote = getClosestNote(freq);
-        setFrequency(freq.toFixed(2));
-        setNote(detectedNote);
-        frequencyGraph(dataArray);
-        tuningPin(freq);
-      }
-
-      animationId.current = requestAnimationFrame(processAudio);
-    };
-
-    const frequencyGraph = (dataArray) => {
-      const canvas = canvasRef.current;
-      // Prevent error if canvas is null
-      if (!canvas) return; 
-      const ctx = canvas.getContext("2d");
-      // extra safety
-      if (!ctx) return; 
-
-      // Draws to the dimensions of the device
-      const width = canvas.width / (window.devicePixelRatio || 1);
-      const height = canvas.height / (window.devicePixelRatio || 1);
-      const barWidth = width / bufferLength;
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "#50c681";
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (dataArray[i] + 1) * (height / 2);
-        ctx.fillRect(i * barWidth, height - barHeight, barWidth, barHeight);
-      }
-    };
-
-    const tuningPin = (freq) => {
-      const canvas = canvasRef.current;
-      //Prevent error if canvas is null
-      if (!canvas) return; 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return; 
-
-      const width = canvas.width / (window.devicePixelRatio || 1);
-      const height = canvas.height / (window.devicePixelRatio || 1);
-      const rectHeight = 30;
-      const y = height - rectHeight;
-
-      ctx.clearRect(0, y, width, rectHeight);
-
-      if (!freq || !note) return;
-
-      const targetFreq = getTargetFrequency(note);
-      const diff = freq - targetFreq;
-
-      let leftColor = "transparent";
-      let middleColor = "transparent";
-      let rightColor = "transparent";
-
-      // Set colors based on the difference between detected frequency and target frequency
-      if (Math.abs(diff) < 3) {
-        middleColor = "#50c681";
-      } else if (diff < -10) {
-        leftColor = Math.abs(diff) < 15 ? "#c6bc50" : "#c65095";
-      } else if (diff > 10) {
-        rightColor = Math.abs(diff) < 15 ? "#c6bc50" : "#c65095";
-      }
-
-      ctx.fillStyle = leftColor;
-      ctx.fillRect(0, y, width / 3, rectHeight);
-
-      ctx.fillStyle = middleColor;
-      ctx.fillRect(width / 3, y, width / 3, rectHeight);
-
-      ctx.fillStyle = rightColor;
-      ctx.fillRect((width / 3) * 2, y, width / 3, rectHeight);
-    };
-
-    // Function to calculate the target frequency for a given note
-    const getTargetFrequency = (note) => {
-      const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-      const baseFreq = 16.35;
-      const noteIndex = notes.indexOf(note.slice(0, -1));
-      const octave = parseInt(note.slice(-1));
-      return baseFreq * Math.pow(2, (noteIndex + octave * 12) / 12);
-    };
-
-    if (isTuning) startTuning();
-    else stopTuning();
-
-    return () => {
+    // Start or stop tuning based on isTuning
+    if (isTuning) {
+      startTuning();
+    } else {
       stopTuning();
-    };
-  }, [isTuning, note]);
+    }
 
-  useEffect(() => {
+    return () => stopTuning();
+  }, [isTuning]);
+
+  const drawWaveform = (data) => {
+    // Ensure the canvas is available
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // Get the 2D context for drawing
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    // Resize the canvas to match the device pixel ratio
-    const resizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+    // Set canvas properties
+    ctx.imageSmoothingEnabled = false;
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
 
-      const ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
-    };
+    // Draw the waveform
+    const barWidth = width / data.length;
+    ctx.fillStyle = "#06d6a0";
 
-    resizeCanvas();
-
-    window.addEventListener("resize", resizeCanvas);
-    return () => window.removeEventListener("resize", resizeCanvas);
-  }, []);
-
-  // Function to auto-correlate the audio buffer and find the frequency
-  const autoCorrelate = (buffer, sampleRate) => {
-    let size = buffer.length;
-    let bestOffset = -1;
-    let bestCorr = 0;
-    let rootMeanSquare = 0;
-    let foundCorr = false;
-    let lastCorr = 1;
-
-    // Calculate the root mean square of the buffer
-    for (let i = 0; i < size; i++) {
-      let x = buffer[i];
-      rootMeanSquare += x * x;
+    // Loop through the data array and draw each bar
+    for (let i = 0; i < data.length; i++) {
+      const barHeight = (data[i] + 1) * height / 2;
+      ctx.fillRect(i * barWidth, height - barHeight, barWidth, barHeight);
     }
-    rootMeanSquare = Math.sqrt(rootMeanSquare / size);
-    if (rootMeanSquare < 0.01) return null;
-
-    // Loop through possible offsets to find the best correlation
-    for (let offset = 0; offset < size / 2; offset++) {
-      let correlation = 0;
-      for (let i = 0; i < size / 2; i++) {
-        correlation += Math.abs(buffer[i] - buffer[i + offset]);
-      }
-      correlation = 1 - correlation / (size / 2);
-
-      // If the correlation is high enough, update the best offset and correlation
-      if (correlation > 0.97 && correlation > lastCorr) {
-        foundCorr = true;
-        if (correlation > bestCorr) {
-          bestCorr = correlation;
-          bestOffset = offset;
-        }
-      } else if (foundCorr) {
-        let frequency = sampleRate / bestOffset;
-        return frequency;
-      }
-      lastCorr = correlation;
-    }
-    return null;
   };
 
-  // Function to get the closest musical note for a given frequency
-  const getClosestNote = (freq) => {
-    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    const baseFreq = 16.35;
-    const noteFreq = Array.from({ length: 96 }, (_, i) =>
-      baseFreq * Math.pow(2, i / 12)
-    );
+ 
+  const drawTuningPin = (freq, note) => {
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext("2d");
+  if (!ctx || !note) return;
 
-    // Find the closest note frequency
-    const closestNote = noteFreq.reduce(
-      (prev, curr, index) =>
-        Math.abs(curr - freq) < Math.abs(noteFreq[prev] - freq) ? index : prev,
-      0
-    );
+  // Set canvas properties
+  const width = canvas.width;
+  const height = canvas.height;
+  const y = height - 30;
+  const pinWidth = 10;
 
-    // Get the note name and octave from the closest note index
-    const noteName = notes[closestNote % 12];
-    const octave = Math.floor(closestNote / 12);
-    return `${noteName}${octave}`;
-  };
+  // Clear the canvas
+  const target = getTargetFrequency(note);
+  const diff = freq - target;
+
+  // Calculate the offset for the tuning pin based on the frequency difference
+  const offset = Math.min(Math.max(diff * 2, -100), 100); 
+  const center = width / 2;
+
+  // Clear bottom area
+  ctx.clearRect(0, y, width, 30);
+
+  // Draw center line
+  ctx.strokeStyle = "#06d6a0";
+  ctx.beginPath();
+  ctx.moveTo(center, y);
+  ctx.lineTo(center, y + 30);
+  ctx.stroke();
+
+  // Draw background zones so that the colour is more visible
+  ctx.fillStyle = "#264653"; 
+  ctx.fillRect(0, y, center, 30);
+  ctx.fillStyle = "#f94144"; 
+  ctx.fillRect(center, y, center, 30);
+
+  // Draw tuning pin
+  ctx.fillStyle = Math.abs(diff) < 1 ? "#06d6a0" : diff < 0 ? "#00b4d8" : "#ef476f";
+  ctx.fillRect(center + offset - pinWidth / 2, y, pinWidth, 30);
+
+  // Draw text
+  ctx.font = "12px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText("Too Low", center - 50, y - 2);
+  ctx.fillText("In Tune", center, y - 2);
+  ctx.fillText("Too High", center + 50, y - 2);
+};
+
 
   return (
-    <div
-      style={{
-        fontFamily: "Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <h1>Guitar Tuner</h1>
-      <button
-        onClick={() => setIsTuning(!isTuning)}
-        style={{
-          backgroundColor: isTuning ? "#50c681" : "#304463",
-          padding: "10px 20px",
-          fontSize: "18px",
-          margin: "10px",
-          border: "none",
-          cursor: "pointer",
-          color: "white",
-          borderRadius: "4px",
-        }}
-      >
-        {isTuning ? "Stop Tuning" : "Start Tuning"}
-      </button>
-      <h2>Detected Note: {note || "Waiting..."}</h2>
-      <p>Frequency: {frequency ? `${frequency} Hz` : "Waiting..."}</p>
-      <canvas
-        ref={canvasRef}
-        style={{
-          width: "90%",
-          maxWidth: "600px",
-          height: "200px",
-          border: "1px solid #DB2F62",
-          backgroundColor: "black",
-          borderRadius: "6px",
-          marginTop: "20px",
-        }}
-      />
+    <div className="min-h-screen bg-base-100 text-base-content p-6">
+      <div className="max-w-xl mx-auto card bg-base-200 border border-base-300 shadow-xl">
+        <div className="card-body">
+          <h1 className="card-title text-3xl text-primary font-bold">
+            Note Tuner
+          </h1>
+          <p className="text-base-content opacity-70 mb-4">
+            Tune any musical note using your microphone. Make sure you are in a quiet place.
+          </p>
+
+          <div className="mb-4 flex items-center gap-4 flex-wrap">
+            <button
+              className={`btn ${isTuning ? "btn-accent" : "btn-primary"} transition-all`}
+              onClick={() => setIsTuning((prev) => !prev)}
+            >
+              {isTuning ? "Stop Tuning" : "Start Tuning"}
+            </button>
+            {note && (
+              <div className="text-lg font-semibold text-secondary">
+                Note: <span className="text-accent">{note}</span> ({frequency} Hz)
+              </div>
+            )}
+            {tuningStatus && (
+              <div className={`text-sm font-medium ${tuningStatus === "In Tune" ? "text-success" : "text-error"}`}>
+                {tuningStatus}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-base-300 p-4 rounded-xl shadow-inner">
+            <canvas
+              ref={canvasRef}
+              width={300}
+              height={100}
+              className="w-full h-48 bg-neutral rounded-lg"
+            />
+            <p className="text-center text-xs text-base-content mt-2">
+              Real-time waveform and tuning pin
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default GuitarTuner;
+export default NoteTuner;
