@@ -9,7 +9,7 @@ export default function Contact() {
       <div className="rounded-xl p-6 flex items-center justify-center w-64 shadow-lg
                       bg-purple-900 dark:bg-purple-600">
         <a
-          href="https://github.com/your-github-username"
+          href="https://github.com/glh23"
           target="_blank"
           rel="noopener noreferrer"
           className="hover:scale-110 transition-transform"
@@ -26,7 +26,7 @@ export default function Contact() {
       <div className="rounded-xl p-6 flex items-center justify-center w-64 shadow-lg
                       bg-blue-900 dark:bg-blue-600">
         <a
-          href="https://linkedin.com/in/your-linkedin-username"
+          href="www.linkedin.com/in/george-hawtin-568272296"
           target="_blank"
           rel="noopener noreferrer"
           className="hover:scale-110 transition-transform"

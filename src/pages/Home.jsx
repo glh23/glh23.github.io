@@ -23,7 +23,7 @@ export default function Home() {
         </div>
         <div className="space-y-2">
           <p><strong>2021 – 2025:</strong> University</p>
-          <p><strong>2022 – 2025:</strong> BSc (Hons) Computer Science — 2:1</p>
+          <p><strong>2022 – 2025:</strong> BSc (Hons) Computer Science - 2:1</p>
           <p><strong>Relevant Modules:</strong> Machine Learning, Big Data, Full Stack, Web Development, App Development, Information Management</p>
         </div>
         <ul className="list-disc list-inside pl-4 text-base space-y-1">
@@ -46,7 +46,7 @@ export default function Home() {
           <h2 className="text-2xl font-semibold">Leadership</h2>
         </div>
         <ul className="list-disc list-inside pl-4 space-y-1">
-          <li><strong>Rock & Live Music Society:</strong> Treasurer and secretary — ran events and supported grassroots artists.</li>
+          <li><strong>Rock & Live Music Society:</strong> Treasurer and secretary - ran events and supported grassroots artists.</li>
           <li><strong>Rock Band:</strong> Lead vocals, guitarist, and songwriter. Built public speaking and stage presence.</li>
         </ul>
       </section>
@@ -59,7 +59,7 @@ export default function Home() {
         </div>
         <ul className="list-disc list-inside pl-4 space-y-1">
           <li><strong>2024, Crookwood:</strong> Data entry and QA for utility analysis software.</li>
-          <li><strong>2023, Tesco:</strong> Night shift team — resilience and coordination under pressure.</li>
+          <li><strong>2023, Tesco:</strong> Night shift team - resilience and coordination under pressure.</li>
           <li><strong>2016–2020, Canal Trust:</strong> Volunteered on narrowboat maintenance for disabled guests.</li>
         </ul>
       </section>
