@@ -3,13 +3,26 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const getInitialTheme = () => localStorage.getItem("theme") || "light";
+  // Safely get the initial theme from localStorage or default to "light"
+  const getInitialTheme = () => {
+    try {
+      const storedTheme = localStorage.getItem("theme");
+      return storedTheme ? storedTheme : "light";
+    } catch (e) {
+      // localStorage access denied or not available
+      return "light";
+    }
+  };
 
   const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+    try {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+    } catch (e) {
+      // Ignore localStorage errors (e.g., in edge or other browsers with strict privacy settings)
+    }
   }, [theme]);
 
   const toggleTheme = () => {

@@ -1,26 +1,32 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
-
+import { useNavigate } from "react-router-dom";
+import { Sun, Moon } from "lucide-react";
 
 export default function Topbar() {
+  // Safely get initial theme from localStorage
+  const getInitialTheme = () => {
+    try {
+      return localStorage.getItem("theme") || "light";
+    } catch {
+      return "light";
+    }
+  };
+
   const [open, setOpen] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("theme") || "light";
-  });
+  const [theme, setTheme] = useState(getInitialTheme);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
   const goHome = () => {
-    navigate('/');
+    navigate("/");
     setOpen(false);
   };
   const goContact = () => {
-    navigate('/Contact');
+    navigate("/Contact");
     setOpen(false);
   };
   const goProjects = () => {
-    navigate('/Projects');
+    navigate("/Projects");
     setOpen(false);
   };
 
@@ -36,11 +42,15 @@ export default function Topbar() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {
+      // Fail silently if localStorage is blocked
+    }
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+    setTheme((curr) => (curr === "light" ? "dark" : "light"));
   };
 
   return (
@@ -71,17 +81,26 @@ export default function Topbar() {
           {open && (
             <ul className="absolute right-0 mt-2 w-40 bg-base-100 text-neutral-900 dark:text-base-content dark:bg-base-200 shadow-lg rounded-md py-1 z-50 border border-base-300">
               <li>
-                <button onClick={goHome} className="block w-full text-left px-4 py-2 hover:bg-pink-500 hover:text-white transition">
+                <button
+                  onClick={goHome}
+                  className="block w-full text-left px-4 py-2 hover:bg-pink-500 hover:text-white transition"
+                >
                   Home
                 </button>
               </li>
               <li>
-                <button onClick={goContact} className="block w-full text-left px-4 py-2 hover:bg-blue-500 hover:text-white transition">
+                <button
+                  onClick={goContact}
+                  className="block w-full text-left px-4 py-2 hover:bg-blue-500 hover:text-white transition"
+                >
                   Contact
                 </button>
               </li>
               <li>
-                <button onClick={goProjects} className="block w-full text-left px-4 py-2 hover:bg-yellow-400 hover:text-black transition">
+                <button
+                  onClick={goProjects}
+                  className="block w-full text-left px-4 py-2 hover:bg-yellow-400 hover:text-black transition"
+                >
                   Projects
                 </button>
               </li>
@@ -89,7 +108,7 @@ export default function Topbar() {
           )}
         </div>
 
-       {/* Theme toggle */}
+        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           className="btn btn-ghost p-2 text-primary hover:text-accent transition"
@@ -97,7 +116,6 @@ export default function Topbar() {
         >
           {theme === "dark" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
         </button>
-
       </div>
     </nav>
   );

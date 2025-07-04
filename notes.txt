@@ -4,6 +4,6 @@ https://nerdcave.com/tailwind-cheat-sheet
 daisy:
 https://daisyui.com/components/
 
-lucide:
+icons:
 https://lucide.dev/icons/
-
+https://simpleicons.org/?q=github
