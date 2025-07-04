@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// Generate chromatic notes and their frequencies
+// Generate notes and their frequencies
 const generateNoteFrequencies = () => {
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const frequencies = {};
@@ -36,12 +36,14 @@ const autoCorrelate = (buf, sampleRate) => {
   const SIZE = buf.length;
   let rms = 0;
 
+  // Calculate RMS (Root Mean Square)
   for (let i = 0; i < SIZE; i++) {
     rms += buf[i] * buf[i];
   }
   rms = Math.sqrt(rms / SIZE);
   if (rms < 0.01) return null;
 
+  // Normalize the buffer
   let r1 = 0, r2 = SIZE - 1, threshold = 0.2;
 
   for (let i = 0; i < SIZE / 2; i++) {
@@ -51,6 +53,7 @@ const autoCorrelate = (buf, sampleRate) => {
     }
   }
 
+  // Find the end of the signal
   for (let i = 1; i < SIZE / 2; i++) {
     if (Math.abs(buf[SIZE - i]) < threshold) {
       r2 = SIZE - i;
@@ -61,8 +64,10 @@ const autoCorrelate = (buf, sampleRate) => {
   buf = buf.slice(r1, r2);
   const newSize = buf.length;
 
+  // If the buffer is too small, return null
   if (newSize === 0) return null;
 
+  // Perform auto-correlation
   let c = new Array(newSize).fill(0);
   for (let i = 0; i < newSize; i++) {
     for (let j = 0; j < newSize - i; j++) {

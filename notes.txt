@@ -1,0 +1,9 @@
+tailwind:
+https://nerdcave.com/tailwind-cheat-sheet
+
+daisy:
+https://daisyui.com/components/
+
+lucide:
+https://lucide.dev/icons/
+

@@ -2,11 +2,12 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./components/theme/themeContext";
 import TopBar from "./components/bars/Topbar";
+import BottomBar from "./components/bars/Bottombar";
 import Home from "./pages/Home";
 import Contact from "./pages/Contact";
 import Projects from "./pages/projects/Projects";
 import GuitarTuner from './pages/projects/Tuner';
-import Metronome from './pages/projects/Metronome';
+import DrumMachine from './pages/projects/DrumMachine';
 import RiskWeightPage from "./pages/projects/RiskWeight";
 
 export default function App() {
@@ -20,9 +21,10 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/guitar-tuner" element={<GuitarTuner />} />
-            <Route path="/metronome" element={<Metronome />} />
+            <Route path="/drum-machine" element={<DrumMachine />} />
             <Route path="/risk-weight" element={<RiskWeightPage />} />
           </Routes>
+          <BottomBar/>
         </div>
       </Router>
     </ThemeProvider>
