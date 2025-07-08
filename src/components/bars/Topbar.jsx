@@ -17,6 +17,7 @@ export default function Topbar() {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
+  // Navigation functions
   const goHome = () => {
     navigate("/");
     setOpen(false);
