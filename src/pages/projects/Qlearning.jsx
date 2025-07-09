@@ -65,6 +65,7 @@ export default function UserVsQLearning() {
   const alpha = 0.5;
   const gamma = 0.9;
   const epsilon = 0.2;
+  const [pretrainCount, setPretrainCount] = useState(50); // Number of pretraining episodes
 
   // Reset the game board and states
   function resetGame() {
@@ -180,6 +181,24 @@ export default function UserVsQLearning() {
         <h1 className="text-3xl font-bold text-primary mb-6 text-center select-none">
           Play Against Q-Learning Agent
         </h1>
+
+        <div className="my-4">
+          <label className="label">
+            <span className="label-text">Pre-train Agent (episodes):</span>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={1000}
+            step={10}
+            value={pretrainCount}
+            onChange={(e) => setPretrainCount(parseInt(e.target.value))}
+            className="range range-primary w-full"
+          />
+          <div className="text-xs text-center mt-1">
+            {pretrainCount} episodes
+          </div>
+        </div>
 
         {/* Board grid: 3x3 clickable cells */}
         <div className="grid grid-cols-3 gap-4 mb-6" style={{ userSelect: "none" }}>
