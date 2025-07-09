@@ -9,6 +9,7 @@ import Projects from "./pages/projects/Projects";
 import GuitarTuner from './pages/projects/Tuner';
 import DrumMachine from './pages/projects/DrumMachine';
 import RiskWeightPage from "./pages/projects/RiskWeight";
+import NoughtsCrosses from "./pages/projects/Qlearning";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/guitar-tuner" element={<GuitarTuner />} />
             <Route path="/drum-machine" element={<DrumMachine />} />
             <Route path="/risk-weight" element={<RiskWeightPage />} />
+            <Route path="/noughts-and-crosses" element={<NoughtsCrosses />} />
           </Routes>
           <BottomBar/>
         </div>

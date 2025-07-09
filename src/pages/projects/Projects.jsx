@@ -25,6 +25,14 @@ const projects = [
     link: "/risk-weight",
     isInternal: true,
   },
+  {
+    id: 4,
+    title: "Noughts and Crosses",
+    description:
+      "Noughts and Crosses (Tic Tac Toe) game using Q-learning to play against the user.",
+    link: "/noughts-and-crosses",
+    isInternal: true,
+  },
 ];
 
 export default function Projects() {
