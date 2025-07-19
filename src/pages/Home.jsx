@@ -11,7 +11,7 @@ export default function Home() {
           <h1 className="text-3xl font-bold">Summary</h1>
         </div>
         <p className="leading-relaxed text-base">
-          I am a final year Computer Science student looking for graduate data and developer roles that will allow me to expand my knowledge in both software and business. Outside of computing, I'm a passionate rock guitarist and enjoy indoor climbing.
+          I am a Graduate Computer Science student looking for graduate data, developer and engineering roles that will allow me to expand my knowledge in both software and business. Outside of computing, I'm a passionate rock guitarist and enjoy indoor climbing.
         </p>
       </section>
 
@@ -71,11 +71,10 @@ export default function Home() {
           <h2 className="text-2xl font-semibold">Technologies</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm sm:text-base">
-          <p><strong>Languages:</strong> Python, JavaScript, Java, C++, C#, MATLAB, SQL</p>
-          <p><strong>Databases:</strong> MongoDB, Neo4j, Firebase, MSSQL</p>
-          <p><strong>Frameworks:</strong> Express.js, React, Node.js</p>
+          <p><strong>Languages:</strong> Python, JavaScript, TypeScript, HTML, CSS, Java, C++, C#, MATLAB, SQL</p>
+          <p><strong>Databases:</strong> MongoDB, Neo4j, Firebase, MSSQL, MySQL</p>
+          <p><strong>Frameworks:</strong> Express.js, React, Node.js, Spring</p>
           <p><strong>Cloud/Tools:</strong> Azure, Docker, Git, Firebase</p>
-          <p><strong>ML/DS:</strong> Pandas, NumPy, Custom Neural Nets, GMM, K-Means, scikit-learn</p>
           <p><strong>Design/UI:</strong> Figma, Axure</p>
         </div>
       </section>
