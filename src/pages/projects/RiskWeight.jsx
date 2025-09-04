@@ -123,7 +123,6 @@ export default function CreditRiskCalculator() {
           : Number(value),
     }));
   };
-
   const calculateCreditRisk = ({ exposure, creditRating, recoveryRate }) => {
     const pd = creditRatingToPD[creditRating] ?? 0.01;
     const lgd = 1 - recoveryRate;

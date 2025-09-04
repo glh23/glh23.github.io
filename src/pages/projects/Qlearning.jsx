@@ -5,6 +5,7 @@ const AGENT = "X";
 const USER = "O";
 const BOARD_SIZE = 3;
 
+// Check for a win or draw
 function checkWinner(board) {
   const lines = [
     [[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]],
@@ -23,10 +24,12 @@ function checkWinner(board) {
   return null;
 }
 
+// Serialize board state to a string
 function serializeBoard(board) {
   return board.flat().map(cell => cell || "-").join("");
 }
 
+// Get list of available actions (empty cells)
 function getAvailableActions(board) {
   const actions = [];
   for (let r = 0; r < BOARD_SIZE; r++) {
@@ -36,6 +39,11 @@ function getAvailableActions(board) {
   }
   return actions;
 }
+
+// Main component which includes the game logic and UI
+// Epsilon-greedy policy is used for action selection 
+// Q(s,a) = Q(s,a) + alpha * (reward + gamma * max_a' Q(s',a') - Q(s,a))
+// Learning rate (alpha), discount factor (gamma), and exploration rate (epsilon) are configurable
 
 export default function UserVsQLearning() {
   const [board, setBoard] = useState(
@@ -48,8 +56,9 @@ export default function UserVsQLearning() {
 
   const alpha = 0.5;
   const gamma = 0.9;
-  const epsilon = 0.2;
+  const epsilon = 0.25;
 
+  // Reset the game state
   function resetGame() {
     setBoard(Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY)));
     setWinner(null);
@@ -57,6 +66,7 @@ export default function UserVsQLearning() {
     episodeHistory.current = [];
   }
 
+  // Agent chooses action using epsilon-greedy policy
   function agentChooseAction(stateStr, actions) {
     if (!(stateStr in qTable.current)) {
       qTable.current[stateStr] = {};
@@ -80,6 +90,7 @@ export default function UserVsQLearning() {
 
   function updateQTable(reward) {
     let target = reward;
+    // Update Q-values in reverse order of the episode
     for (let i = episodeHistory.current.length - 1; i >= 0; i--) {
       const { state, action } = episodeHistory.current[i];
       if (!(state in qTable.current)) qTable.current[state] = {};
@@ -91,6 +102,7 @@ export default function UserVsQLearning() {
     episodeHistory.current = [];
   }
 
+  // Agent makes a move
   function agentMove() {
     if (winner) return;
     const stateStr = serializeBoard(board);
